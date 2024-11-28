@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/sudoku-solver/static/css/main.cbee09c8.css",
+    "main.js": "/sudoku-solver/static/js/main.38498300.js",
+    "static/js/453.244ee3b7.chunk.js": "/sudoku-solver/static/js/453.244ee3b7.chunk.js",
+    "index.html": "/sudoku-solver/index.html",
+    "main.cbee09c8.css.map": "/sudoku-solver/static/css/main.cbee09c8.css.map",
+    "main.38498300.js.map": "/sudoku-solver/static/js/main.38498300.js.map",
+    "453.244ee3b7.chunk.js.map": "/sudoku-solver/static/js/453.244ee3b7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.cbee09c8.css",
+    "static/js/main.38498300.js"
+  ]
+}

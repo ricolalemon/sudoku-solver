@@ -5,7 +5,8 @@ const SudokuSolver = () => {
   const [originalBoard, setOriginalBoard] = useState(Array(9).fill().map(() => Array(9).fill(false)));
   const [solving, setSolving] = useState(false);
   const [currentTry, setCurrentTry] = useState({ row: -1, col: -1 });
-  const [solveMode, setSolveMode] = useState('normal'); // 'fast', 'normal', 'relax'
+  const [solveMode, setSolveMode] = useState('normal');
+  const [selectedCell, setSelectedCell] = useState(null); // 新增：当前选中的格子
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -13,6 +14,13 @@ const SudokuSolver = () => {
     if (value === '') return true;
     const num = parseInt(value);
     return !isNaN(num) && num >= 1 && num <= 9;
+  };
+
+  // 修改：处理虚拟键盘输入
+  const handleKeyboardInput = (value) => {
+    if (!selectedCell || solving) return;
+    const { row, col } = selectedCell;
+    handleChange(row, col, value);
   };
 
   const handleChange = (row, col, value) => {
@@ -32,6 +40,7 @@ const SudokuSolver = () => {
     }
   };
 
+  // 其他原有函数保持不变...
   const isValid = (board, row, col, num) => {
     for (let x = 0; x < 9; x++) {
       if (board[row][x] === num) return false;
@@ -52,7 +61,6 @@ const SudokuSolver = () => {
     return true;
   };
 
-  // 快速求解，没有动画
   const fastSolve = (board) => {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -74,7 +82,6 @@ const SudokuSolver = () => {
     return true;
   };
 
-  // 带动画的求解
   const animatedSolve = async (board, delayTime) => {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -105,15 +112,14 @@ const SudokuSolver = () => {
 
   const solveSudoku = async () => {
     setSolving(true);
+    setSelectedCell(null); // 求解时清除选中状态
     const newBoard = board.map(row => [...row]);
 
     if (solveMode === 'fast') {
-      // 快速模式：直接求解，无动画
       if (fastSolve(newBoard)) {
         setBoard([...newBoard]);
       }
     } else {
-      // 普通模式和解压模式：带动画效果
       const delayTime = solveMode === 'normal' ? 10 : 50;
       await animatedSolve(newBoard, delayTime);
     }
@@ -126,6 +132,7 @@ const SudokuSolver = () => {
     setBoard(Array(9).fill().map(() => Array(9).fill('')));
     setOriginalBoard(Array(9).fill().map(() => Array(9).fill(false)));
     setCurrentTry({ row: -1, col: -1 });
+    setSelectedCell(null);
   };
 
   const loadExample = () => {
@@ -151,6 +158,7 @@ const SudokuSolver = () => {
       });
     });
     setOriginalBoard(newOriginalBoard);
+    setSelectedCell(null);
   };
 
   const getCellClassName = (row, col) => {
@@ -170,7 +178,9 @@ const SudokuSolver = () => {
     if (col % 3 !== 2 && col !== 8) classes.push('border-r');
 
     // 背景样式
-    if (currentTry.row === row && currentTry.col === col) {
+    if (selectedCell?.row === row && selectedCell?.col === col) {
+      classes.push('bg-blue-100'); // 选中的格子显示蓝色背景
+    } else if (currentTry.row === row && currentTry.col === col) {
       classes.push('bg-yellow-100');
     } else if ((Math.floor(row/3) + Math.floor(col/3)) % 2 === 0) {
       classes.push('bg-white');
@@ -195,6 +205,13 @@ const SudokuSolver = () => {
     return classes.join(' ');
   };
 
+  // 新增：虚拟键盘按钮样式
+  const getKeyboardButtonClass = (num) => {
+    return `w-12 h-12 text-xl font-bold rounded-lg transition-all duration-200
+            ${solving ? 'bg-gray-200 cursor-not-allowed' : 'bg-white hover:bg-blue-100 active:bg-blue-200'}
+            border-2 border-gray-300 shadow-md`;
+  };
+
   return (
     <div className="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6">
       <style>
@@ -217,12 +234,35 @@ const SudokuSolver = () => {
               type="text"
               value={cell}
               onChange={(e) => handleChange(i, j, e.target.value)}
+              onClick={() => !solving && setSelectedCell({ row: i, col: j })}
               className={getCellClassName(i, j)}
               disabled={solving}
               maxLength={1}
+              readOnly // 添加 readOnly 属性，防止弹出手机键盘
             />
           ))
         ))}
+      </div>
+
+      {/* 虚拟数字键盘 */}
+      <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+          <button
+            key={num}
+            onClick={() => handleKeyboardInput(num.toString())}
+            disabled={solving}
+            className={getKeyboardButtonClass(num)}
+          >
+            {num}
+          </button>
+        ))}
+        <button
+          onClick={() => handleKeyboardInput('')}
+          disabled={solving}
+          className={getKeyboardButtonClass('clear') + ' col-span-3'}
+        >
+          清除
+        </button>
       </div>
       
       <div className="flex flex-col items-center gap-4 mt-6">

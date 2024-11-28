@@ -7,6 +7,7 @@ const SudokuSolver = () => {
   const [currentTry, setCurrentTry] = useState({ row: -1, col: -1 });
   const [solveMode, setSolveMode] = useState('normal');
   const [selectedCell, setSelectedCell] = useState(null); // 新增：当前选中的格子
+  const [showKeyboard, setShowKeyboard] = useState(false); // 新增：控制虚拟键盘显示
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -214,6 +215,12 @@ const SudokuSolver = () => {
 
   return (
     <div className="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6">
+      {/* 添加献词 */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Sudoku Solver</h1>
+        <p className="text-gray-600 italic">Dedicated to Yui, who loves solving Sudoku puzzles</p>
+      </div>
+
       <style>
         {`
           @keyframes pop-in {
@@ -226,6 +233,17 @@ const SudokuSolver = () => {
           }
         `}
       </style>
+
+      {/* 添加虚拟键盘开关 */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setShowKeyboard(!showKeyboard)}
+          className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-200"
+        >
+          {showKeyboard ? '隐藏虚拟键盘' : '显示虚拟键盘'}
+        </button>
+      </div>
+
       <div className="grid grid-cols-9 border-2 border-gray-400 rounded-lg overflow-hidden">
         {board.map((row, i) => (
           row.map((cell, j) => (
@@ -238,32 +256,34 @@ const SudokuSolver = () => {
               className={getCellClassName(i, j)}
               disabled={solving}
               maxLength={1}
-              readOnly // 添加 readOnly 属性，防止弹出手机键盘
+              readOnly={showKeyboard} // 只在显示虚拟键盘时禁用实体键盘输入
             />
           ))
         ))}
       </div>
 
-      {/* 虚拟数字键盘 */}
-      <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+      {/* 虚拟数字键盘（条件渲染） */}
+      {showKeyboard && (
+        <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+            <button
+              key={num}
+              onClick={() => handleKeyboardInput(num.toString())}
+              disabled={solving}
+              className={getKeyboardButtonClass(num)}
+            >
+              {num}
+            </button>
+          ))}
           <button
-            key={num}
-            onClick={() => handleKeyboardInput(num.toString())}
+            onClick={() => handleKeyboardInput('')}
             disabled={solving}
-            className={getKeyboardButtonClass(num)}
+            className={getKeyboardButtonClass('clear') + ' col-span-3'}
           >
-            {num}
+            清除
           </button>
-        ))}
-        <button
-          onClick={() => handleKeyboardInput('')}
-          disabled={solving}
-          className={getKeyboardButtonClass('clear') + ' col-span-3'}
-        >
-          清除
-        </button>
-      </div>
+        </div>
+      )}
       
       <div className="flex flex-col items-center gap-4 mt-6">
         <div className="flex justify-center gap-4 mb-4">
@@ -274,7 +294,7 @@ const SudokuSolver = () => {
                        ? 'bg-blue-600 text-white' 
                        : 'bg-gray-200 hover:bg-gray-300'}`}
           >
-            快速模式
+            Fast
           </button>
           <button
             onClick={() => setSolveMode('normal')}
@@ -283,7 +303,7 @@ const SudokuSolver = () => {
                        ? 'bg-blue-600 text-white' 
                        : 'bg-gray-200 hover:bg-gray-300'}`}
           >
-            普通模式
+            Normal
           </button>
           <button
             onClick={() => setSolveMode('relax')}
@@ -292,7 +312,7 @@ const SudokuSolver = () => {
                        ? 'bg-blue-600 text-white' 
                        : 'bg-gray-200 hover:bg-gray-300'}`}
           >
-            解压模式
+            Relax
           </button>
         </div>
         <div className="flex justify-center gap-4">
@@ -303,7 +323,7 @@ const SudokuSolver = () => {
                      hover:from-blue-600 hover:to-blue-700 transition-all duration-200 
                      shadow-lg disabled:opacity-50 font-semibold"
           >
-            {solving ? '求解中...' : '求解'}
+            {solving ? 'Solving...' : 'Solve'}
           </button>
           <button
             onClick={clearBoard}
@@ -312,7 +332,7 @@ const SudokuSolver = () => {
                      hover:from-gray-600 hover:to-gray-700 transition-all duration-200 
                      shadow-lg disabled:opacity-50 font-semibold"
           >
-            清空
+            Clear
           </button>
           <button
             onClick={loadExample}
@@ -321,9 +341,14 @@ const SudokuSolver = () => {
                      hover:from-green-600 hover:to-green-700 transition-all duration-200 
                      shadow-lg disabled:opacity-50 font-semibold"
           >
-            示例
+            Example
           </button>
         </div>
+      </div>
+
+      {/* 添加页脚信息 */}
+      <div className="text-center mt-8 text-sm text-gray-500">
+        <p>Made with ❤️ for Yui</p>
       </div>
     </div>
   );

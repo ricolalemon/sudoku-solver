@@ -1,0 +1,14 @@
+{
+  "name": "sudoku-solver",
+  "version": "0.1.0",
+  "homepage": "https://ricolalemon.github.io/sudoku-solver",
+  "private": true,
+  "dependencies": {
+    ...
+  },
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    ...
+  }
+}

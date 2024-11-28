@@ -214,141 +214,145 @@ const SudokuSolver = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6">
-      {/* 献词保持英文 */}
+    <div className="max-w-lg mx-auto">
+      {/* 只保留一个标题和献词 */}
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">数独求解器</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">数独求解器</h1>
         <p className="text-gray-600 italic">Dedicated to Yui, who loves solving Sudoku puzzles</p>
       </div>
 
-      <style>
-        {`
-          @keyframes pop-in {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          .animate-pop-in {
-            animation: pop-in 0.3s ease-out forwards;
-          }
-        `}
-      </style>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <style>
+          {`
+            @keyframes pop-in {
+              0% { transform: scale(0.8); opacity: 0; }
+              50% { transform: scale(1.2); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            .animate-pop-in {
+              animation: pop-in 0.3s ease-out forwards;
+            }
+          `}
+        </style>
 
-      {/* 虚拟键盘开关改为中文 */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setShowKeyboard(!showKeyboard)}
-          className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-200"
-        >
-          {showKeyboard ? '隐藏虚拟键盘' : '显示虚拟键盘'}
-        </button>
-      </div>
+        {/* 虚拟键盘开关 */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowKeyboard(!showKeyboard)}
+            className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-200"
+          >
+            {showKeyboard ? '隐藏虚拟键盘' : '显示虚拟键盘'}
+          </button>
+        </div>
 
-      <div className="grid grid-cols-9 border-2 border-gray-400 rounded-lg overflow-hidden">
-        {board.map((row, i) => (
-          row.map((cell, j) => (
-            <input
-              key={`${i}-${j}`}
-              type="text"
-              value={cell}
-              onChange={(e) => handleChange(i, j, e.target.value)}
-              onClick={() => !solving && setSelectedCell({ row: i, col: j })}
-              className={getCellClassName(i, j)}
-              disabled={solving}
-              maxLength={1}
-              readOnly={showKeyboard}
-            />
-          ))
-        ))}
-      </div>
-
-      {/* 虚拟数字键盘 */}
-      {showKeyboard && (
-        <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-            <button
-              key={num}
-              onClick={() => handleKeyboardInput(num.toString())}
-              disabled={solving}
-              className={getKeyboardButtonClass(num)}
-            >
-              {num}
-            </button>
+        {/* 数独网格 */}
+        <div className="grid grid-cols-9 border-2 border-gray-400 rounded-lg overflow-hidden">
+          {board.map((row, i) => (
+            row.map((cell, j) => (
+              <input
+                key={`${i}-${j}`}
+                type="text"
+                value={cell}
+                onChange={(e) => handleChange(i, j, e.target.value)}
+                onClick={() => !solving && setSelectedCell({ row: i, col: j })}
+                className={getCellClassName(i, j)}
+                disabled={solving}
+                maxLength={1}
+                readOnly={showKeyboard}
+              />
+            ))
           ))}
-          <button
-            onClick={() => handleKeyboardInput('')}
-            disabled={solving}
-            className={getKeyboardButtonClass('clear') + ' col-span-3'}
-          >
-            清除
-          </button>
         </div>
-      )}
-      
-      <div className="flex flex-col items-center gap-4 mt-6">
-        <div className="flex justify-center gap-4 mb-4">
-          <button
-            onClick={() => setSolveMode('fast')}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 
-                     ${solveMode === 'fast' 
-                       ? 'bg-blue-600 text-white' 
-                       : 'bg-gray-200 hover:bg-gray-300'}`}
-          >
-            快速模式
-          </button>
-          <button
-            onClick={() => setSolveMode('normal')}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 
-                     ${solveMode === 'normal' 
-                       ? 'bg-blue-600 text-white' 
-                       : 'bg-gray-200 hover:bg-gray-300'}`}
-          >
-            普通模式
-          </button>
-          <button
-            onClick={() => setSolveMode('relax')}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 
-                     ${solveMode === 'relax' 
-                       ? 'bg-blue-600 text-white' 
-                       : 'bg-gray-200 hover:bg-gray-300'}`}
-          >
-            解压模式
-          </button>
-        </div>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={solveSudoku}
-            disabled={solving}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg 
-                     hover:from-blue-600 hover:to-blue-700 transition-all duration-200 
-                     shadow-lg disabled:opacity-50 font-semibold"
-          >
-            {solving ? '求解中...' : '求解'}
-          </button>
-          <button
-            onClick={clearBoard}
-            disabled={solving}
-            className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg 
-                     hover:from-gray-600 hover:to-gray-700 transition-all duration-200 
-                     shadow-lg disabled:opacity-50 font-semibold"
-          >
-            清空
-          </button>
-          <button
-            onClick={loadExample}
-            disabled={solving}
-            className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg 
-                     hover:from-green-600 hover:to-green-700 transition-all duration-200 
-                     shadow-lg disabled:opacity-50 font-semibold"
-          >
-            示例
-          </button>
-        </div>
-      </div>
 
-      {/* 页脚献词保持英文 */}
-      <div className="text-center mt-8 text-sm text-gray-500">
-        <p>Made with ❤️ for Yui</p>
+        {/* 虚拟数字键盘 */}
+        {showKeyboard && (
+          <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <button
+                key={num}
+                onClick={() => handleKeyboardInput(num.toString())}
+                disabled={solving}
+                className={getKeyboardButtonClass(num)}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              onClick={() => handleKeyboardInput('')}
+              disabled={solving}
+              className={getKeyboardButtonClass('clear') + ' col-span-3'}
+            >
+              清除
+            </button>
+          </div>
+        )}
+        
+        {/* 控制按钮 */}
+        <div className="flex flex-col items-center gap-4 mt-6">
+          <div className="flex justify-center gap-4 mb-4">
+            <button
+              onClick={() => setSolveMode('fast')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 
+                       ${solveMode === 'fast' 
+                         ? 'bg-blue-600 text-white' 
+                         : 'bg-gray-200 hover:bg-gray-300'}`}
+            >
+              快速模式
+            </button>
+            <button
+              onClick={() => setSolveMode('normal')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 
+                       ${solveMode === 'normal' 
+                         ? 'bg-blue-600 text-white' 
+                         : 'bg-gray-200 hover:bg-gray-300'}`}
+            >
+              普通模式
+            </button>
+            <button
+              onClick={() => setSolveMode('relax')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 
+                       ${solveMode === 'relax' 
+                         ? 'bg-blue-600 text-white' 
+                         : 'bg-gray-200 hover:bg-gray-300'}`}
+            >
+              解压模式
+            </button>
+          </div>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={solveSudoku}
+              disabled={solving}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg 
+                       hover:from-blue-600 hover:to-blue-700 transition-all duration-200 
+                       shadow-lg disabled:opacity-50 font-semibold"
+            >
+              {solving ? '求解中...' : '求解'}
+            </button>
+            <button
+              onClick={clearBoard}
+              disabled={solving}
+              className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg 
+                       hover:from-gray-600 hover:to-gray-700 transition-all duration-200 
+                       shadow-lg disabled:opacity-50 font-semibold"
+            >
+              清空
+            </button>
+            <button
+              onClick={loadExample}
+              disabled={solving}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg 
+                       hover:from-green-600 hover:to-green-700 transition-all duration-200 
+                       shadow-lg disabled:opacity-50 font-semibold"
+            >
+              示例
+            </button>
+          </div>
+        </div>
+
+        {/* 页脚 */}
+        <div className="text-center mt-8 text-sm text-gray-500">
+          <p>Made with ❤️ for Yui</p>
+        </div>
       </div>
     </div>
   );

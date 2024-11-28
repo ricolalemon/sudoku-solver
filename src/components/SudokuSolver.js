@@ -6,8 +6,8 @@ const SudokuSolver = () => {
   const [solving, setSolving] = useState(false);
   const [currentTry, setCurrentTry] = useState({ row: -1, col: -1 });
   const [solveMode, setSolveMode] = useState('normal');
-  const [selectedCell, setSelectedCell] = useState(null); // 新增：当前选中的格子
-  const [showKeyboard, setShowKeyboard] = useState(false); // 新增：控制虚拟键盘显示
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [showKeyboard, setShowKeyboard] = useState(false);
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 

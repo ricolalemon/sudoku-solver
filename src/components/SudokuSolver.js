@@ -317,7 +317,7 @@ const SudokuSolver = () => {
                          ? 'bg-blue-600 text-white' 
                          : 'bg-gray-200 hover:bg-gray-300'}`}
             >
-              解压模式
+              Rei模式
             </button>
           </div>
           <div className="flex justify-center gap-4">

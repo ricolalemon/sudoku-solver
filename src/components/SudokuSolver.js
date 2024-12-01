@@ -85,31 +85,31 @@ const SudokuSolver = () => {
 
   const animatedSolve = async (board, delayTime) => {
     for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        if (board[row][col] === '') {
-          for (let num = 1; num <= 9; num++) {
-            setCurrentTry({ row, col });
-            await delay(delayTime);
+        for (let col = 0; col < 9; col++) {
+            if (board[row][col] === '') {
+                setCurrentTry({ row, col });
+                
+                for (let num = 1; num <= 9; num++) {
+                    await delay(delayTime);
+                    // 显示当前尝试的数字
+                    board[row][col] = num.toString();
+                    setBoard([...board]);
 
-            const numStr = num.toString();
-            if (isValid(board, row, col, numStr)) {
-              board[row][col] = numStr;
-              setBoard([...board]);
-
-              if (await animatedSolve(board, delayTime)) {
-                return true;
-              }
-              
-              board[row][col] = '';
-              setBoard([...board]);
+                    if (isValid(board, row, col, num.toString())) {
+                        if (await animatedSolve(board, delayTime)) {
+                            return true;
+                        }
+                    }
+                    // 如果这个数字不行，清空并继续尝试下一个
+                    board[row][col] = '';
+                    setBoard([...board]);
+                }
+                return false;
             }
-          }
-          return false;
         }
-      }
     }
     return true;
-  };
+};
 
   const solveSudoku = async () => {
     setSolving(true);

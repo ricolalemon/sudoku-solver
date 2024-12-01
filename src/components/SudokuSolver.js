@@ -4,7 +4,7 @@ const SudokuSolver = () => {
   const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill('')));
   const [originalBoard, setOriginalBoard] = useState(Array(9).fill().map(() => Array(9).fill(false)));
   const [solving, setSolving] = useState(false);
-  const [currentTry, setCurrentTry] = useState({ row: -1, col: -1 });
+  const [currentTry, setCurrentTry] = useState({ row: -1, col: -1, num: '' });
   const [solveMode, setSolveMode] = useState('normal');
   const [selectedCell, setSelectedCell] = useState(null);
   const [showKeyboard, setShowKeyboard] = useState(false);
@@ -17,7 +17,6 @@ const SudokuSolver = () => {
     return !isNaN(num) && num >= 1 && num <= 9;
   };
 
-  // 修改：处理虚拟键盘输入
   const handleKeyboardInput = (value) => {
     if (!selectedCell || solving) return;
     const { row, col } = selectedCell;
@@ -41,7 +40,6 @@ const SudokuSolver = () => {
     }
   };
 
-  // 其他原有函数保持不变...
   const isValid = (board, row, col, num) => {
     for (let x = 0; x < 9; x++) {
       if (board[row][x] === num) return false;
@@ -85,35 +83,37 @@ const SudokuSolver = () => {
 
   const animatedSolve = async (board, delayTime) => {
     for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            if (board[row][col] === '') {
-                setCurrentTry({ row, col });
-                
-                for (let num = 1; num <= 9; num++) {
-                    await delay(delayTime);
-                    // 显示当前尝试的数字
-                    board[row][col] = num.toString();
-                    setBoard([...board]);
+      for (let col = 0; col < 9; col++) {
+        if (board[row][col] === '') {
+          for (let num = 1; num <= 9; num++) {
+            // 更新当前尝试的数字
+            setCurrentTry({ row, col, num: num.toString() });
+            await delay(delayTime);
 
-                    if (isValid(board, row, col, num.toString())) {
-                        if (await animatedSolve(board, delayTime)) {
-                            return true;
-                        }
-                    }
-                    // 如果这个数字不行，清空并继续尝试下一个
-                    board[row][col] = '';
-                    setBoard([...board]);
-                }
-                return false;
+            if (isValid(board, row, col, num.toString())) {
+              board[row][col] = num.toString();
+              setBoard([...board]);
+
+              if (await animatedSolve(board, delayTime)) {
+                return true;
+              }
+              
+              board[row][col] = '';
+              setBoard([...board]);
             }
+          }
+          setCurrentTry({ row: -1, col: -1, num: '' });
+          return false;
         }
+      }
     }
     return true;
-};
+  };
 
   const solveSudoku = async () => {
     setSolving(true);
-    setSelectedCell(null); // 求解时清除选中状态
+    setSelectedCell(null);
+    setCurrentTry({ row: -1, col: -1, num: '' });
     const newBoard = board.map(row => [...row]);
 
     if (solveMode === 'fast') {
@@ -125,14 +125,14 @@ const SudokuSolver = () => {
       await animatedSolve(newBoard, delayTime);
     }
 
-    setCurrentTry({ row: -1, col: -1 });
+    setCurrentTry({ row: -1, col: -1, num: '' });
     setSolving(false);
   };
 
   const clearBoard = () => {
     setBoard(Array(9).fill().map(() => Array(9).fill('')));
     setOriginalBoard(Array(9).fill().map(() => Array(9).fill(false)));
-    setCurrentTry({ row: -1, col: -1 });
+    setCurrentTry({ row: -1, col: -1, num: '' });
     setSelectedCell(null);
   };
 
@@ -179,10 +179,14 @@ const SudokuSolver = () => {
     if (col % 3 !== 2 && col !== 8) classes.push('border-r');
 
     // 背景样式
-    if (selectedCell?.row === row && selectedCell?.col === col) {
-      classes.push('bg-blue-100'); // 选中的格子显示蓝色背景
-    } else if (currentTry.row === row && currentTry.col === col) {
+    if (currentTry.row === row && currentTry.col === col) {
+      // 当前尝试的格子显示背景和当前尝试的数字
       classes.push('bg-yellow-100');
+      if (currentTry.num !== '') {
+        classes.push('text-red-500');  // 尝试的数字显示为红色
+      }
+    } else if (selectedCell?.row === row && selectedCell?.col === col) {
+      classes.push('bg-blue-100');
     } else if ((Math.floor(row/3) + Math.floor(col/3)) % 2 === 0) {
       classes.push('bg-white');
     } else {
@@ -191,11 +195,15 @@ const SudokuSolver = () => {
 
     // 文字样式
     if (originalBoard[row][col]) {
-      classes.push('text-black'); // 原始数字为黑色
+      classes.push('text-black');
     } else if (board[row][col] !== '') {
-      classes.push('text-blue-600'); // 填入数字为蓝色
-      if (solveMode !== 'fast') {
-        classes.push('animate-pop-in');
+      if (currentTry.row === row && currentTry.col === col) {
+        // 不添加动画，因为这里是正在尝试的数字
+      } else {
+        classes.push('text-blue-600');
+        if (solveMode !== 'fast') {
+          classes.push('animate-pop-in');
+        }
       }
     }
 
@@ -206,7 +214,6 @@ const SudokuSolver = () => {
     return classes.join(' ');
   };
 
-  // 新增：虚拟键盘按钮样式
   const getKeyboardButtonClass = (num) => {
     return `w-12 h-12 text-xl font-bold rounded-lg transition-all duration-200
             ${solving ? 'bg-gray-200 cursor-not-allowed' : 'bg-white hover:bg-blue-100 active:bg-blue-200'}
@@ -215,7 +222,6 @@ const SudokuSolver = () => {
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* 只保留一个标题和献词 */}
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">数独求解器</h1>
         <p className="text-gray-600 italic">Dedicated to Yui, who loves solving Sudoku puzzles</p>
@@ -235,7 +241,6 @@ const SudokuSolver = () => {
           `}
         </style>
 
-        {/* 虚拟键盘开关 */}
         <div className="flex justify-end mb-4">
           <button
             onClick={() => setShowKeyboard(!showKeyboard)}
@@ -245,14 +250,13 @@ const SudokuSolver = () => {
           </button>
         </div>
 
-        {/* 数独网格 */}
         <div className="grid grid-cols-9 border-2 border-gray-400 rounded-lg overflow-hidden">
           {board.map((row, i) => (
             row.map((cell, j) => (
               <input
                 key={`${i}-${j}`}
                 type="text"
-                value={cell}
+                value={currentTry.row === i && currentTry.col === j && currentTry.num ? currentTry.num : cell}
                 onChange={(e) => handleChange(i, j, e.target.value)}
                 onClick={() => !solving && setSelectedCell({ row: i, col: j })}
                 className={getCellClassName(i, j)}
@@ -264,7 +268,6 @@ const SudokuSolver = () => {
           ))}
         </div>
 
-        {/* 虚拟数字键盘 */}
         {showKeyboard && (
           <div className="mt-6 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
@@ -287,7 +290,6 @@ const SudokuSolver = () => {
           </div>
         )}
         
-        {/* 控制按钮 */}
         <div className="flex flex-col items-center gap-4 mt-6">
           <div className="flex justify-center gap-4 mb-4">
             <button
@@ -315,7 +317,7 @@ const SudokuSolver = () => {
                          ? 'bg-blue-600 text-white' 
                          : 'bg-gray-200 hover:bg-gray-300'}`}
             >
-              Rei模式
+              解压模式
             </button>
           </div>
           <div className="flex justify-center gap-4">
@@ -349,7 +351,6 @@ const SudokuSolver = () => {
           </div>
         </div>
 
-        {/* 页脚 */}
         <div className="text-center mt-8 text-sm text-gray-500">
           <p>Made with ❤️ for Yui</p>
         </div>

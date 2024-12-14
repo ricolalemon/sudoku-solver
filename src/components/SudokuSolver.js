@@ -5,11 +5,86 @@ const SudokuSolver = () => {
   const [originalBoard, setOriginalBoard] = useState(Array(9).fill().map(() => Array(9).fill(false)));
   const [solving, setSolving] = useState(false);
   const [currentTry, setCurrentTry] = useState({ row: -1, col: -1, num: '' });
-  const [solveMode, setSolveMode] = useState('normal');
+  const [solveMode, setSolveMode] = useState('normal'); // 'fast', 'normal', 'relax'
   const [selectedCell, setSelectedCell] = useState(null);
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showTimeCard, setShowTimeCard] = useState(false);
+  const [timeCardDate, setTimeCardDate] = useState('');
+  const [timeJumpStatus, setTimeJumpStatus] = useState('idle'); // 'idle', 'jumping', 'success'
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const checkTimeCode = () => {
+    // 检查每个3x3宫格是否包含特定数字
+    const hasNumberInBox = (boxRow, boxCol, number) => {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const row = boxRow * 3 + i;
+          const col = boxCol * 3 + j;
+          if (board[row][col] === number.toString()) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // 检查三个不同的日期码
+    const datePatterns = [
+      {
+        boxes: [
+          { box: [0, 0], value: '2' },  // 第一个宫格找2
+          { box: [0, 1], value: '' },   // 第二个宫格空着
+          { box: [0, 2], value: '2' },  // 第三个宫格找2
+          { box: [1, 0], value: '4' },  // 第四个宫格找4
+          { box: [1, 1], value: '1' },  // 第五个宫格找1
+          { box: [1, 2], value: '' },   // 第六个宫格空着
+          { box: [2, 0], value: '1' },  // 第七个宫格找1
+          { box: [2, 1], value: '2' }   // 第八个宫格找2
+        ],
+        date: '2024年10月12日'
+      },
+      {
+        boxes: [
+          { box: [0, 0], value: '2' },
+          { box: [0, 1], value: '' },
+          { box: [0, 2], value: '2' },
+          { box: [1, 0], value: '4' },
+          { box: [1, 1], value: '1' },
+          { box: [1, 2], value: '' },
+          { box: [2, 0], value: '0' },
+          { box: [2, 1], value: '3' }
+        ],
+        date: '2024年10月3日'
+      },
+      {
+        boxes: [
+          { box: [0, 0], value: '2' },
+          { box: [0, 1], value: '' },
+          { box: [0, 2], value: '2' },
+          { box: [1, 0], value: '4' },
+          { box: [1, 1], value: '1' },
+          { box: [1, 2], value: '1' },
+          { box: [2, 0], value: '0' },
+          { box: [2, 1], value: '9' }
+        ],
+        date: '2024年11月9日'
+      }
+    ];
+
+    // 检查每种模式
+    for (const { boxes, date } of datePatterns) {
+      if (boxes.every(({box, value}) => 
+        value === '' || hasNumberInBox(box[0], box[1], value)
+      )) {
+        setTimeCardDate(date);
+        setTimeJumpStatus('success'); // 设置为跳跃成功
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   const isValidInput = (value) => {
     if (value === '') return true;
@@ -25,16 +100,19 @@ const SudokuSolver = () => {
 
   const handleChange = (row, col, value) => {
     if (!isValidInput(value)) return;
-    const newBoard = board.map(row => [...row]);
+    const newBoard = board.map(r => [...r]);
     newBoard[row][col] = value;
     setBoard(newBoard);
     
+    // 移除以下行，因为我们现在在求解时检查彩蛋
+    // checkTimeCode(); 
+    
     if (value !== '') {
-      const newOriginalBoard = originalBoard.map(row => [...row]);
+      const newOriginalBoard = originalBoard.map(r => [...r]);
       newOriginalBoard[row][col] = true;
       setOriginalBoard(newOriginalBoard);
     } else {
-      const newOriginalBoard = originalBoard.map(row => [...row]);
+      const newOriginalBoard = originalBoard.map(r => [...r]);
       newOriginalBoard[row][col] = false;
       setOriginalBoard(newOriginalBoard);
     }
@@ -86,12 +164,12 @@ const SudokuSolver = () => {
       for (let col = 0; col < 9; col++) {
         if (board[row][col] === '') {
           for (let num = 1; num <= 9; num++) {
-            // 更新当前尝试的数字
             setCurrentTry({ row, col, num: num.toString() });
             await delay(delayTime);
 
-            if (isValid(board, row, col, num.toString())) {
-              board[row][col] = num.toString();
+            const numStr = num.toString();
+            if (isValid(board, row, col, numStr)) {
+              board[row][col] = numStr;
               setBoard([...board]);
 
               if (await animatedSolve(board, delayTime)) {
@@ -111,10 +189,31 @@ const SudokuSolver = () => {
   };
 
   const solveSudoku = async () => {
+    if (solving) return; // 防止重复点击
+
     setSolving(true);
     setSelectedCell(null);
     setCurrentTry({ row: -1, col: -1, num: '' });
-    const newBoard = board.map(row => [...row]);
+
+    // 仅在“Rei模式”下触发彩蛋
+    if (solveMode === 'relax') {
+      // 立即显示时间跳跃装置卡片并设置状态为“正在跳跃...”
+      setShowTimeCard(true);
+      setTimeJumpStatus('jumping');
+
+      // 设置三秒后检查并显示跳跃成功的信息
+      setTimeout(() => {
+        const matched = checkTimeCode();
+        if (matched) {
+          setTimeJumpStatus('success');
+        } else {
+          // 如果不匹配，可以选择隐藏卡片或显示其他信息
+          setShowTimeCard(false);
+        }
+      }, 3000);
+    }
+
+    const newBoard = board.map(r => [...r]);
 
     if (solveMode === 'fast') {
       if (fastSolve(newBoard)) {
@@ -168,7 +267,6 @@ const SudokuSolver = () => {
       'transition-all duration-200 ease-in-out'
     ];
     
-    // 边框样式
     if (row === 0) classes.push('border-t-2');
     if (row === 8) classes.push('border-b-2');
     if (col === 0) classes.push('border-l-2');
@@ -178,12 +276,10 @@ const SudokuSolver = () => {
     if (row % 3 !== 2 && row !== 8) classes.push('border-b');
     if (col % 3 !== 2 && col !== 8) classes.push('border-r');
 
-    // 背景样式
     if (currentTry.row === row && currentTry.col === col) {
-      // 当前尝试的格子显示背景和当前尝试的数字
       classes.push('bg-yellow-100');
       if (currentTry.num !== '') {
-        classes.push('text-red-500');  // 尝试的数字显示为红色
+        classes.push('text-red-500');
       }
     } else if (selectedCell?.row === row && selectedCell?.col === col) {
       classes.push('bg-blue-100');
@@ -193,7 +289,6 @@ const SudokuSolver = () => {
       classes.push('bg-gray-50');
     }
 
-    // 文字样式
     if (originalBoard[row][col]) {
       classes.push('text-black');
     } else if (board[row][col] !== '') {
@@ -237,6 +332,13 @@ const SudokuSolver = () => {
             }
             .animate-pop-in {
               animation: pop-in 0.3s ease-out forwards;
+            }
+            @keyframes fade-in {
+              0% { opacity: 0; transform: scale(0.9); }
+              100% { opacity: 1; transform: scale(1); }
+            }
+            .animate-fade-in {
+              animation: fade-in 0.5s ease-out forwards;
             }
           `}
         </style>
@@ -355,6 +457,31 @@ const SudokuSolver = () => {
           <p>Made with ❤️ for Yui</p>
         </div>
       </div>
+
+      {/* 时间跳跃装置卡片 */}
+      {showTimeCard && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-8 rounded-xl shadow-2xl transform transition-all duration-500 animate-fade-in">
+            <div className="text-center">
+              {/* 更改标题为“时间跳跃装置” */}
+              <div className="mb-4 text-4xl font-bold text-gray-800">时间跳跃装置</div>
+              <div className="mb-6">
+                {timeJumpStatus === 'jumping' ? (
+                  <p className="text-lg text-gray-600">正在跳跃...</p>
+                ) : (
+                  <p className="text-lg text-gray-600">时间跳跃成功，现在是：{timeCardDate}，请和Rei确认</p>
+                )}
+              </div>
+              <button
+                onClick={() => setShowTimeCard(false)}
+                className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
